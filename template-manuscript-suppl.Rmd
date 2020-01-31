@@ -1,0 +1,138 @@
+---
+title: "title"
+subtitle: "Supplemental Material"
+author:
+  - Jacob J. Christensen, PhD:
+      email: j.j.christensen@medisin.uio.no
+      institute: [NKTforFH,deptNutr]
+      correspondence: true
+  - Stine M. Ulven, PhD: 
+      email: smulven@medisin.uio.no
+      institute: [deptNutr]
+      correspondence: false
+  - Magne Thoresen, PhD:
+      email: magne.thoresen@medisin.uio.no
+      institute: [deptBiostat]
+      correspondence: false
+  - Kirsten B. Holven, PhD: 
+      email: k.b.holven@medisin.uio.no
+      institute: [NKTforFH,deptNutr]
+      correspondence: false
+  - Lene F. Andersen, PhD: 
+      email: l.f.andersen@medisin.uio.no
+      institute: [deptNutr]
+      correspondence: false
+institute:
+  - NKTforFH: "Norwegian National Advisory Unit on Familial Hypercholesterolemia, Department of Endocrinology, Morbid Obesity and Preventive Medicine, Oslo University Hospital, Forskningsveien 2B, 0373 Oslo, Norway"
+  - deptNutr: "Department of Nutrition, Institute of Basic Medical Sciences, University of Oslo, Sognsvannsveien 9, 0372 Oslo, Norway"
+  - deptBiostat: "Department of Biostatistics, Institute of Basic Medical Sciences, University of Oslo, Sognsvannsveien 9, 0372 Oslo, Norway"
+bibliography: extras/mybibfile.bib
+output: 
+  rmarkdown::word_document: 
+    keep_md: TRUE
+    pandoc_args: 
+      - --reference-doc=extras/word-styles-rticles.docx
+      - --csl=extras/am-j-clin-nutr.csl
+      - --filter=pandoc-crossref
+      - --lua-filter=extras/scholarly-metadata.lua
+      - --lua-filter=extras/author-info-blocks.lua
+---
+
+```{r setup, include=FALSE}
+# Load a few packages
+library(knitr)
+library(tidyverse)
+library(captioner)
+
+# Set knitr options
+opts_chunk$set(echo = FALSE, eval=TRUE)
+
+# Paths
+path_figures <- "../../results/figures/"
+path_tables <- "../../results/tables/"
+path_abbreviations <- "../../data/processed/"
+
+# Figure and table captions and numbering
+cap_fig_main <- captioner(prefix = "Figure ", auto_space = FALSE)
+cap_fig_suppl <- captioner(prefix = "Figure S", auto_space = FALSE)
+cap_tab_main <- captioner(prefix = "Table ", auto_space = FALSE)
+cap_tab_suppl <- captioner(prefix = "Table S", auto_space = FALSE)
+
+# Shorten the figure and table citation function
+cite_fig_main <- function(name) cap_fig_main(name, display = "cite")
+cite_fig_suppl <- function(name) cap_fig_suppl(name, display = "cite")
+cite_tab_main <- function(name) cap_tab_main(name, display = "cite")
+cite_tab_suppl <- function(name) cap_tab_suppl(name, display = "cite")
+
+# "Activate" main figures in the right order
+cite_fig_main("fig-1")
+cite_fig_main("fig-2")
+```
+
+
+
+Supplemental Methods
+====================
+
+*Should we move anything from the Methods section here instead?*
+
+
+
+Supplemental Tables
+===================
+
+Due to document size constraints, all Supplemental Tables can be found in separate Excel file: *tables-suppl.xlsx*. 
+
+**`r cite_tab_suppl("tab-s1")`**. *Description*. 
+
+**`r cite_tab_suppl("tab-s2")`**. *Description*. 
+
+
+
+
+
+Supplemental Figures
+====================
+
+```{r include=FALSE}
+# "Activate" supplemental figures in the right order
+cite_fig_suppl("fig-s1")
+cite_fig_suppl("fig-s2")
+```
+
+
+
+## `r cite_fig_suppl("fig-s1")`
+
+```{r}
+# fig-s1
+# include_graphics("../../results/fig-s1.png")
+```
+
+**`r cite_fig_suppl("fig-s1")`**. *Description*. Description. Abbreviations. 
+
+
+
+## `r cite_fig_suppl("fig-s2")`
+
+```{r}
+# fig-s2
+# include_graphics("../../results/fig-s2.png")
+```
+
+**`r cite_fig_suppl("fig-s2")`**. *Description*. Description. Abbreviations. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---

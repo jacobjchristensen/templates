@@ -1,0 +1,380 @@
+---
+title: "forestplot"
+subtitle: "template"
+author: "Jacob J. Christensen"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '5'
+    toc_float: yes
+    code_folding: hide
+  pdf_document:
+    toc: yes
+    toc_depth: '5'
+    latex_engine: xelatex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	eval = TRUE, 
+  echo = TRUE, 
+  message = FALSE, 
+  warning = FALSE
+)
+```
+
+## Preparations
+
+```{r}
+# Attach libraries
+pkgs <- c("tidyverse", "gapminder", "gtable", "grid")
+inst <- lapply(pkgs, library, character.only = TRUE)
+
+# Set project theme
+theme_set(theme_minimal() + theme(axis.line = element_line()))
+```
+
+## Data
+
+The data needs to be in a specific format in order to be properly plottet. To see the structure, I will here run simple linear models using the `gapminder` dataset from the `gapminder` package.
+
+
+### Create lm toy function
+
+```{r}
+run_model <- function(adjustments = NULL){
+  
+  # Generate formula
+  if (is.null(adjustments)) generated_formula <- as.formula("lifeExp ~ gdpPercap")
+  else generated_formula <- as.formula(paste("lifeExp ~ gdpPercap", adjustments, sep = " + "))
+  
+  # Run models over each dataset using the predefined formula
+  gapminder %>% 
+    group_nest(continent, country) %>% 
+    mutate(
+      model = map(data, ~lm(generated_formula, data = .x)), 
+      tidy = map(model, ~broom::tidy(.x, conf.int = TRUE)) %>% map(slice, 2), 
+      glance = map(model, broom::glance)
+    ) %>% 
+    select(-data, -model) %>% 
+    unnest() %>% 
+    mutate(
+      p.value_group = if_else(
+        p.value < 0.001, true = "< 0.001", 
+        if_else(p.value < 0.01, true = "< 0.01", 
+        if_else(p.value < 0.05, true = "< 0.05", false = "\u2265 0.05"))) %>% 
+        factor(levels = c("< 0.001", "< 0.01", "< 0.05", "\u2265 0.05"))
+    )
+}
+```
+
+### Run models
+
+```{r}
+model_crude <- run_model(adjustments = NULL)
+model_adj1 <- run_model(adjustments = "pop")
+model_adj2 <- run_model(adjustments = "year")
+model_adj3 <- run_model(adjustments = "year + pop")
+model_adj4 <- run_model(adjustments = "year * pop")
+```
+
+Bind the models together in the same data frame.
+
+```{r}
+model_all <- list(
+  "Crude" = model_crude, 
+  "Population" = model_adj1, 
+  "Year" = model_adj2, 
+  "Year and population" = model_adj3, 
+  "Year X Population" = model_adj4) %>% 
+  bind_rows(.id = "adj_level")
+
+# View the data
+glimpse(model_all)
+```
+
+In this case, we have the following association: "Life expectancy ~ GDP per capita"
+
+We should have available: 
+
+1. estimates (*estimate*) and confidence intervals (**conf.low* and *conf.high*)
+2. subgroups (here: *continent* and *country*, as well as across different *adj_level*)
+3. p value groups (p.value_group)
+4. and other relevant information that we might want to filter and group based on, such as $R^2$ (*r.squared* and *adj.r.squared*)
+
+
+## Multi-panel figures
+
+We might want to split the data into two panels, with approximately equal number of countries on each panel. To do this, we would find natural groups of variables that we could then group. To do this, add another column to the dataset, with a simple if_else statement.
+
+```{r}
+gapminder %>% 
+  select(continent, country) %>% 
+  distinct() %>% 
+  count(continent)
+```
+
+**For this example, I will proceed as usual, but then only present data for Europe and Americas.**
+
+
+## `forestplot` specifics
+
+We are ready to create the forestplot function. To do this, we simply define all aspects of the ggplot call separately, and then combine them into a standardized and effective plot function (with some arguments). 
+
+### Colors
+
+```{r}
+# Define a nice color palette
+cols_names <- c("< 0.001", "< 0.01", "< 0.05", "\u2265 0.05")
+cols_lookup <- RColorBrewer::brewer.pal(n = 9, name = "Set1") %>% 
+  magrittr::extract(c(3, 6, 1, 9)) %>% 
+  set_names(c("< 0.001", "< 0.01", "< 0.05", "\u2265 0.05"))
+```
+
+### Pointrange fill color
+
+```{r}
+# scale_fill_manual
+my_scale_fill_manual <- scale_fill_manual(
+  name = "P value",
+  limits = cols_names,
+  values = cols_lookup, 
+  drop = FALSE
+  )
+```
+
+### Reference line
+
+```{r}
+# geom_hline
+my_geom_hline <- geom_hline(
+  aes(yintercept = 0), 
+  color = "grey50",
+  linetype = 2
+  )
+```
+
+### Pointrange
+
+```{r}
+# geom_pointrange
+my_geom_pointrange <- geom_pointrange(aes(
+  x = fct_reorder(country, estimate, .desc = TRUE), 
+  y = estimate,
+  ymin = conf.low, 
+  ymax = conf.high, 
+  fill = p.value_group), 
+  shape = 21, 
+  size = 0.4, 
+  position = position_dodge(width = 0.5))
+```
+
+### Specialized theme
+
+This is a slightly complex theme, so I have added lots of comments to aid adjustments. 
+
+*NOTE*: this theme was created for the NOMA intervention metabolomics paper in AJCN (Ulven AJCN 2019), and should be modified according to needs!
+
+```{r}
+# my_theme 
+my_theme <- theme(
+  
+  # adjust margin around plot
+  plot.margin = margin(t = 0, r = 0, b = 0, l = 0), 
+  # push title a bit to the left
+  plot.title = element_text(vjust = -1, 
+                            margin = margin(l = 40)), 
+  
+  # ---The legend
+  # put the legend below plot
+  legend.position = "bottom", 
+  # put legend boxes on top of each other
+  legend.box = "vertical",
+  # adjust legend more to the left
+  legend.justification = "left",
+  # no whitespace margin around each legend box
+  legend.margin = margin(0, 0, 0, 0, "cm"), 
+  # no whitespace margin around the whole legend box
+  legend.box.margin = margin(0, 1.6, 0, 0, "cm"), 
+  # minimize the whitespace between the legend boxes
+  legend.spacing = unit(0, "cm"),
+  # adjust legend text (with a tidbit whitespace on right side)
+  legend.text = element_text(size = 8, 
+                             hjust = 0, 
+                             margin = margin(r = 4)), 
+  # align text labels to the left (0), the default
+  legend.text.align = 0,
+  # reduce legend key size (the little icon)
+  legend.key.height = unit(0.6, "cm"), 
+  legend.key.width = unit(0, "cm"),
+  # adjust legend title
+  legend.title = element_text(size = 9, 
+                              face = "bold", 
+                              vjust = 0.5, 
+                              margin = margin(r = 3)), 
+  # ---
+  
+  # flip the text on the facets
+  strip.text.y = element_text(angle = 0, 
+                              face = "bold", 
+                              size = 10, 
+                              hjust = 0, 
+                              margin = margin(l = 80)), 
+  
+  # add lines along the x and y axis
+  axis.line = element_line(), 
+  # reduce the size of the x axis label a bit
+  axis.title.x = element_text(size = 10, 
+                              hjust = 0.5, 
+                              margin = margin(r = 0)))
+```
+
+### Guides (legend)
+
+```{r}
+# my_guides
+my_guides <- guides(
+  fill = guide_legend(order = 1, 
+                      nrow = 2, 
+                      direction = "horizontal",
+                      title.position = "left")) 
+```
+
+### Facets
+
+```{r}
+# my_facet_grid
+my_facet_grid <- facet_grid(
+  continent ~ ., 
+  scales = "free", 
+  space = "free")
+```
+
+### Labels
+
+```{r}
+# my_labs
+my_labs <- labs(
+  x = NULL, 
+  y = "\u03B2 coefficient\n(95 % CI)") 
+```
+
+
+## `forestplot` function
+
+For effective plotting, wrap everything in a single function. 
+
+```{r}
+forestplot <- function(data, specialized_theme = FALSE){
+  plot <- ggplot(data) + 
+    my_geom_hline + 
+    my_geom_pointrange + 
+    my_scale_fill_manual + 
+    theme_minimal()
+  if (specialized_theme) plot <- plot + my_theme
+  else plot <- plot + theme(legend.position = "bottom")
+  plot <- plot + 
+    my_guides + 
+    coord_flip() + 
+    my_facet_grid + 
+    my_labs
+  plot
+}
+``` 
+
+
+## Simple forestplot
+
+```{r fig.width=4, fig.height=7}
+plot_eur_amer <- model_all %>% 
+  
+  # We can either filter on adjustment level, or put each level in a separate column
+  filter(adj_level == "Crude", continent %in% c("Europe", "Americas")) %>% 
+  forestplot(specialized_theme = FALSE) 
+plot_eur_amer
+```
+
+Now, this is a perfectly fine plot. It could be improved several ways of course, using different themes, fonts and so on. Another way to improve it is to change the strips so that they are on top of each facet instead of on the side. For multiple facets and several plots combined (by column), this makes for effective use of plot space. I created a function to do this using the `gtable` package. 
+
+## `improve_facets` function
+
+```{r}
+improve_facets <- function(my_ggplot_object) {
+  
+  # Get the gtable
+  gt <- ggplotGrob(my_ggplot_object)
+  
+  # Get the position of the panels in the layout
+  panels <- c(subset(gt$layout, grepl("panel", gt$layout$name), se = t:r))
+  
+  # Add a row above each panel
+  for(i in rev(panels$t - 1)) gt <- gtable_add_rows(gt, unit(0.5, "lines"), i)
+  
+  # Get the positions of the panels and the strips in the revised layout
+  panels <- c(subset(gt$layout, grepl("panel", gt$layout$name), se = t:r))
+  strips <- c(subset(gt$layout, grepl("strip-r", gt$layout$name), se = t:r))
+  
+  # Get the strip grobs
+  stripText <- gtable_filter(gt, "strip-r")
+  
+  # Insert the strip grobs into the new rows
+  for(i in 1:length(strips$t)) {
+    gt <- gtable_add_grob(gt, 
+                          stripText$grobs[[i]]$grobs[[1]],  
+                          t = panels$t[i] - 1, 
+                          l = min(panels$l) - 1, 
+                          r = max(panels$r) - 1, 
+                          clip = "off")
+    }
+  
+  # Remove the old strips
+  gt <- gt[,-c(min(strips$l), max(strips$r))]
+  
+  # For this plot - adjust the heights of the strips and the empty row above the strips
+  for(i in panels$t) {
+     gt$heights[i - 1] = unit(1, "lines")
+     gt$heights[i - 2] = unit(0.4, "lines")
+  }
+  
+  # left-justify the text (for multi-lined titles)
+  # gt <- editGrob(grid.force(gt), 
+  #              gPath("layout", "GRID.titleGrob", "GRID.text"), 
+  #              grep = TRUE, 
+  #              global = TRUE,
+  #              just = c("left", "bottom"), 
+  #              x = unit(1, "npc"), 
+  #              y = unit(0.5, "npc"))
+  
+  gt
+}
+```
+
+**This is still a bit experimental, so don't overuse it.**
+
+## Improved forestplot
+
+To actually use the function, we call the `forestplot` function similarly as before, and then we run this `improve_facets` function. Straight forward. To print it, however, we need to use `grid` magic. 
+
+```{r fig.width=4, fig.height=7}
+plot_eur_amer <- model_all %>% 
+  
+  # We can either filter on adjustment level, or put each level in a separate column
+  filter(adj_level == "Crude", continent %in% c("Europe", "Americas")) %>% 
+  
+  # Note that I now use the specialized theme
+  forestplot(specialized_theme = TRUE) %>% 
+  improve_facets()
+
+# Call newpage and draw the plot
+grid.newpage()
+grid.draw(plot_eur_amer)
+```
+
+
+## Session info
+
+```{r}
+devtools::session_info()
+```

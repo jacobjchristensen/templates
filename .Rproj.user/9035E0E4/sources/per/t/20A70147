@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1577140867963.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2508609232",
+    "id" : "20A70147",
+    "lastKnownWriteTime" : 1558603003,
+    "last_content_update" : 1558603003,
+    "path" : "C:/Users/jacobjc/OneDrive - Universitetet i Oslo/templates/template-forestplot.Rmd",
+    "project_path" : "template-forestplot.Rmd",
+    "properties" : {
+        "cursorPosition" : "106,0",
+        "docOutlineVisible" : "1",
+        "scrollLine" : "95"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

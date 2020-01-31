@@ -1,0 +1,289 @@
+---
+title: "project name"
+subtitle: "A substudy from the <project name>"
+author: "Jacob J. Christensen"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+pkgs <- c("tidyverse", "rmarkdown", "knitr")
+inst <- lapply(pkgs, library, character.only = TRUE)
+opts_chunk$set(echo = TRUE)
+```
+
+This document is simply to run all project-related markdown documents effectively, in correct order, and to avoid having to repeatedly copy-paste figures and tables over to the documentation folder. 
+
+
+
+## Paths
+
+```{r}
+manu <- "christensen-<project-name>"
+path_res <- "../results"
+path_res_figs <- "../results/figures"
+path_res_tabs <- "../results/tables"
+path_manu <- file.path("../doc", manu)
+path_manu_figs <- file.path("../doc", manu, "figures")
+path_manu_tabs <- file.path("../doc", manu, "tables")
+path_manu_sub <- file.path("../doc", manu, "submissions")
+```
+
+
+
+## Script names
+
+```{r}
+list.files() %>% str_subset(".Rmd")
+```
+
+
+
+## Reports
+
+```{r}
+render_report <- function(input) {
+  render(input = input, 
+         output_format = "html_document", 
+         output_dir = "../results/reports/")
+  }
+```
+  
+```{r}
+render_report("01-XXX.Rmd")
+render_report("02-XXX.Rmd")
+render_report("03-XXX.Rmd")
+render_report("04-XXX.Rmd")
+```
+
+
+
+## Manuscripts
+
+### Main manuscript
+
+```{r}
+render(
+  input = file.path(path_manu, "christensen-<project-name>-main.Rmd"), 
+  output_format = "rmarkdown::word_document", 
+  output_dir = path_manu)
+```
+
+### Supplemental material manuscript
+
+```{r}
+render(
+  input = file.path(path_manu, "christensen-<project-name>-suppl.Rmd"), 
+  output_format = "rmarkdown::word_document", 
+  output_dir = path_manu)
+```
+
+
+
+## Figures
+
+Which figures to submit? This is determined from the manuscript.
+
+These are all the figure names: 
+
+```{r}
+list.files(path_res_figs)
+```
+
+### Figure names
+
+```{r}
+name_figs <- c(
+  
+    "figure-1" = "", # brief_name
+    "figure-2" = "", # brief_name
+    "figure-3" = "", # brief_name
+    "figure-4" = "", # brief_name
+    
+    "figure-s1" = "", # brief_name
+    "figure-s2" = "", # brief_name
+    "figure-s3" = "", # brief_name
+    "figure-s4" = "", # brief_name
+    "figure-s5" = "", # brief_name
+    "figure-s6" = "", # brief_name
+    "figure-s7" = "" # brief_name
+    
+    )
+```
+
+
+### Copy to doc and rename
+
+This is a function to move one figure from the results/figures to the doc/manuscript/figures/ folder, and rename it according to manuscript, as defined in the previous chunk.
+
+Note that this implementation *overwrites* figures already in the doc/manu/figures folder. Therefore, at this point, it's a good idea to go over and see if there are any that shouldn't be present in the manuscript/figures folder.
+
+```{r}
+copy_and_rename_figures <- function(
+  
+  name_figs, 
+  name_figs_new,
+  overwrite = FALSE
+  
+  ) {
+  
+  if (length(list.files(path_manu_figs)) > 0 && isFALSE(overwrite)) 
+    stop(paste0("Be careful not to overwrite existing files in the ", path_manu_figs, " directory!\n"))
+  if (length(list.files(path_manu_figs)) > 0 && isTRUE(overwrite)) 
+    warning(paste0("Be careful when you overwrite existing files in the ", path_manu_figs, " directory! 
+                   \nNext time, go delete the figures that you don't need properly beforehand.\n\n"))
+
+  # Copy figures
+  name_figs %>% 
+    map(~list.files(path_res, .x, full.names = TRUE) %>% str_subset(".png")) %>% 
+    map(~file.copy(.x, path_manu_figs))
+    
+  name_figs %>% 
+    map(~list.files(path_res_figs, .x, full.names = TRUE) %>% str_subset(".png|.pdf")) %>% 
+    map(~file.copy(.x, path_manu_figs))
+    
+  # Get figure suffixes
+  manu_figures <- name_figs %>% 
+    map(~list.files(path_manu_figs, .x, full.names = TRUE))
+  
+  # Get figure extensions
+  figure_extensions <- manu_figures %>% 
+    map(~str_sub(.x, start = -4L, end = -1L))
+  
+  # Rename figures
+  pmap(
+    list(manu_figures, name_figs_new, figure_extensions), 
+    ~file.rename(from = ..1, to = file.path(path_manu_figs, paste0(..2, ..3))))
+}
+```
+
+Evaluate if you should delete figures already there; then, apply the function to all figures defined above.
+
+```{r}
+# R figures, flow charts and DAGs
+copy_and_rename_figures(name_figs, names(name_figs), overwrite = FALSE)
+```
+
+
+
+
+## Tables
+
+These are the main and supplemental table names:
+
+```{r}
+list.files(path = "../results/tables/")
+```
+
+### Table names
+
+```{r}
+names_tab <- c(
+  "table-1" = "", # brief_name
+  
+  "table-s1" = "", # brief_name
+  "table-s2" = "", # brief_name
+  "table-s3" = "", # brief_name
+  "table-s4" = "", # brief_name
+  "table-s5" = "", # brief_name
+  "table-s6" = "", # brief_name
+  "table-s7" = "" # brief_name
+)
+```
+
+### Gather and rename
+
+Gather all tables to a single excel file.
+
+```{r}
+# Take the table names defined in the previous chunk
+names_tab %>% 
+  
+  # Subset the full path of those names
+  map(~str_subset(string = list.files(path = "../results/tables/", full.names = TRUE), pattern = .x)) %>% 
+  
+  # Read the tables
+  map(read_csv) %>%
+  
+  # Add the names
+  set_names(names(names_tab)) %>%
+  
+  # And write everything to a single excel file
+  openxlsx::write.xlsx(file.path(path_res_tabs, "tables-all.xlsx"))
+```
+
+### Copy to doc
+
+Evaluate if you should delete the excel tables already there; then, copy the updated version to doc/manuscript/tables folder.
+
+```{r}
+file.copy(file.path(path_res_tabs, "tables-all.xlsx"), 
+          file.path(path_manu_tabs, "tables-all.xlsx"), overwrite = FALSE)
+```
+
+
+
+
+## Submissions
+
+For each submission, we will do the following: Take the main and supplemental manuscript documents, figure and tables, etc, and copy into a type and date-specific submission folder.
+
+List files and folders in the doc/manu directory:
+
+```{r}
+list.files(path_manu)
+```
+
+The "prepare submission" function:
+
+```{r}
+prep_submission <- function(type = NULL, journal = NULL, overwrite = FALSE) {
+  
+  # Test that type and journal is correct
+  type <- match.arg(arg = type, choices = c("co-authors", "journals"))
+  if (!is.null(journal)) stopifnot(is.character(journal))
+  
+  # Create path
+  if (type == "co-authors") path_sub <- file.path(path_manu_sub, type, Sys.Date())
+  else if (type == "journals") path_sub <- file.path(path_manu_sub, type, paste0(Sys.Date(), "-", journal))
+  
+  # Create dir at path
+  dir.create(path_sub)
+  
+  # Take all files
+  file.copy(
+    c(list.files(path_manu, full.names = TRUE) %>% str_subset("-main.docx"), 
+      list.files(path_manu, full.names = TRUE) %>% str_subset("-suppl.docx"),
+      list.files(path_manu_tabs, full.names = TRUE), 
+      list.files(path_manu_figs, full.names = TRUE)), 
+    path_sub)
+  
+  # Zip everything for simple distribution
+  zip::zipr(
+    zipfile = paste0(file.path(path_sub, manu), ".zip"),
+    files = list.files(path_sub, full.names = TRUE)
+  )
+}
+```
+
+Prepare submission: 
+
+```{r}
+prep_submission("co-authors")
+# prep_submission("journal", "ajcn")
+```
+
+
+
+
+## Session info
+
+```{r}
+devtools::session_info()
+```
+
+
+
+
+
+---

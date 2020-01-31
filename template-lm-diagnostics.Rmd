@@ -1,0 +1,61 @@
+---
+title: "test"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(broom)
+library(gapminder)
+library(ggfortify)
+library(gvlma)
+library(olsrr)
+library(gridExtra)
+library(grid)
+```
+
+```{r fig.width=6, fig.height=8}
+test <- gapminder %>% 
+  group_nest(continent, country) %>% 
+  sample_n(size = 10) %>% 
+  mutate(
+    model = map(data, ~lm(lifeExp ~ gdpPercap, data = .)), 
+    tidy = map(model, broom::tidy, conf.int = TRUE) %>% map(filter, term != "(Intercept)"), 
+    diag_ggfortify = map(model, autoplot, which = 1:6),
+    diag_gvlma = map(model, gvlma::gvlma), 
+    diag_vif = map(model, olsrr::ols_vif_tol), 
+    diag_coll = map(model, olsrr::ols_coll_diag)
+    )
+
+test
+test$tidy[[3]]
+test$diag_ggfortify[[3]]
+test$diag_gvlma[[3]]
+test$diag_vif[[3]]
+test$diag_coll[[3]]
+```
+
+
+```{r}
+# Save the object
+test %>% select(continent, country, matches("diag")) %>% saveRDS("test.rds")
+
+# Save the figures
+pdf("test.pdf", width = 6, height = 8)
+walk2(test$diag_ggfortify, test$country, 
+     ~gridExtra::grid.arrange(
+       grobs = .x@plots, 
+       top = grid::textGrob(.y, gp = gpar(fontface = "bold"))
+     ))
+dev.off()
+```
+
+```{r}
+devtools::session_info()
+```
+
+
+
+---

@@ -1,0 +1,22 @@
+# .gitignore file for template project directory
+# This file specifies which files and folders in project directory Git ignores
+
+# Ignore R-project files
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+
+# Ignore subdirectories
+1-management/
+2-ethics-governance/
+3-data-collection/
+4-analysis-01/data/
+4-analysis-01/scripts/cache/
+5-documentation/
+
+# Ignore various file types? Specify here using wildcard and extension:
+
+# Remember to rename the `4-...` data analysis folders to sub-project!
+# Remember to rename the file to ".gitignore"!

@@ -1,0 +1,436 @@
+---
+title: "title"
+author:
+  - Jacob J. Christensen, PhD:
+      email: j.j.christensen@medisin.uio.no
+      institute: [NKTforFH,deptNutr]
+      correspondence: true
+  - Stine M. Ulven, PhD: 
+      email: smulven@medisin.uio.no
+      institute: [deptNutr]
+      correspondence: false
+  - Magne Thoresen, PhD:
+      email: magne.thoresen@medisin.uio.no
+      institute: [deptBiostat]
+      correspondence: false
+  - Kirsten B. Holven, PhD: 
+      email: k.b.holven@medisin.uio.no
+      institute: [NKTforFH,deptNutr]
+      correspondence: false
+  - Lene F. Andersen, PhD: 
+      email: l.f.andersen@medisin.uio.no
+      institute: [deptNutr]
+      correspondence: false
+institute:
+  - NKTforFH: "Norwegian National Advisory Unit on Familial Hypercholesterolemia, Department of Endocrinology, Morbid Obesity and Preventive Medicine, Oslo University Hospital, Forskningsveien 2B, 0373 Oslo, Norway"
+  - deptNutr: "Department of Nutrition, Institute of Basic Medical Sciences, University of Oslo, Sognsvannsveien 9, 0372 Oslo, Norway"
+  - deptBiostat: "Department of Biostatistics, Institute of Basic Medical Sciences, University of Oslo, Sognsvannsveien 9, 0372 Oslo, Norway"
+bibliography: extras/mybibfile.bib
+output: 
+  rmarkdown::word_document: 
+    keep_md: TRUE
+    pandoc_args: 
+      - --reference-doc=extras/word-styles-rticles.docx
+      - --csl=extras/am-j-clin-nutr.csl
+      - --filter=pandoc-crossref
+      - --lua-filter=extras/scholarly-metadata.lua
+      - --lua-filter=extras/author-info-blocks.lua
+---
+
+```{r setup, include=FALSE}
+# Load a few packages
+library(knitr)
+library(captioner)
+library(tidyverse)
+
+# Set knitr options
+opts_chunk$set(
+  echo = FALSE, 
+  eval = FALSE, 
+  include = FALSE
+  # eval.after = "fig.cap",
+  # out.width = "100%", 
+  # fig.align = "center"
+  )
+
+# Paths
+path_figures <- "../../results/figures/"
+path_tables <- "../../results/tables/"
+path_abbreviations <- "../../data/processed/"
+
+# Figure and table captions and numbering
+cap_fig_main <- captioner(prefix = "Figure ", auto_space = FALSE)
+cap_fig_suppl <- captioner(prefix = "Figure S", auto_space = FALSE)
+cap_tab_main <- captioner(prefix = "Table ", auto_space = FALSE)
+cap_tab_suppl <- captioner(prefix = "Table S", auto_space = FALSE)
+
+# Shorten the figure and table citation function
+cite_fig_main <- function(name) cap_fig_main(name, display = "cite")
+cite_fig_suppl <- function(name) cap_fig_suppl(name, display = "cite")
+cite_tab_main <- function(name) cap_tab_main(name, display = "cite")
+cite_tab_suppl <- function(name) cap_tab_suppl(name, display = "cite")
+```
+
+
+**Short running head**: 
+
+**Disclaimers**: 
+
+**Sources of support**: 
+
+**Abbreviations**: 
+
+**Clinical Trial Registry number**: 
+
+
+
+
+
+
+Abstract
+========
+
+```{r}
+#
+# Tips and tricks for gettings started with the writing: 
+# 
+# - Get some headlines and keywords down
+# - Keep coming back to your pre-defined aims
+# - Finalize the overall structure of the manuscript
+# - Use checklists: [CONSORT, STROBE, etc](http://www.equator-network.org/)
+# 
+# 
+# The writing process:
+# 
+# - Aims.
+# - Determine what results are most important; make figures and tables of these.
+# - Structure Introduction, Methods, Results and Discussion according to Aims.
+# - Write Abstract, Title, Conclusion and key notes towards the end.
+# 
+# 
+# Seven principles (Turabian KL, Chicago Guide, 2013): 
+# 
+# - Avoid introducing more than a few sentences with long phrases and clauses; *get to the subject of your sentence quickly*. 
+# - Make *subjects short and concrete*, ideally *naming the character* that performs the action expressed by the verb that follows. 
+# - Avoid interrupting the *subject and verb* with more than a word or two. 
+# - Put key actions in *verbs, not in nouns*.  
+# - Put information *familiar* to readers at the beginning of a sentence, *new* information at the end. 
+# - Choose *active or passive verbs* to reflect the previous principles. 
+# - Use first-person *pronouns* appropriately.
+# 
+# 
+# Use tenses correctly: https://www.nature.com/scitable/topicpage/effective-writing-13815989/
+# 
+# 
+# Title
+# 
+# - Include study design
+# - Not too short or long
+# - Interesting
+# - Covers topic(s)
+# - Adapted to article type (style etc)
+# - Language- and syntax-correct
+# - Important words highlighted early
+# - Don't use unknown abbreviations or too long/complex words
+# - Publishable without changes
+# 
+# 
+# Abstract
+# 
+# Nature summary paragraph (Nature 435, 114-118, 2005): 
+# 
+# - *One or two* sentences providing a basic introduction to the field, comprehensible to a scientist in any discipline.
+# - *Two or three* sentences of more detailed background, comprehensible to scientists in related disciplines.
+# - *One* sentence clearly stating the general problem being addressed by this particular study. 
+# - *One* sentence summarising the main results (with the words "here we show..." or their equivalent)
+# - *Two or three* sentences explaining what the main results reveals in direct comparison to what was thought to be the case previously, or how the main result adds to previous knowledge. 
+# - *One or two* sentences to put the results into a more general context. 
+# - *Two or three* sentences to provide a broader perspective, readily comprehensible to a scientist in any discipline, may be included in the first paragraph if the editor considers that the accessibility of the paper is significantly enhanced by their inclusion. Under these cicumstance, the length of the paragraph can be up to 300 words.
+# 
+```
+  
+**Background**: 
+  
+**Aims and objectives**: 
+  
+**Methods**: 
+  
+**Results**: 
+  
+**Conclusions**: 
+
+
+
+**Keywords**: 
+
+
+
+Introduction
+============
+
+```{r}
+# - Define the background/context. Get the readers interest.
+# - What is known already on this topic? General information on the field. 
+# - Get to the scientific question quickly; don't write a comprehensive review of the field. 
+# - Informative, yet direct, concise and to the point. 
+# - Write in a *readable style*.
+# - Most importantly, clearly state an *unresolved scientific issue*: 
+#   - knowledge gap: what is unknown or incompletely understood?
+#   - inconclusive results
+#   - not tested previously
+#   - a new take on an old issue (for example due to new technology not available in previous studies)
+# - The research question/hypotheses/aims naturally follows the unresolved scientific issue. 
+# 
+# Aim: Work through the paper with a clearly stated Aim. Discuss this with your supervisor or a key co-author. The Aim should take form of a PICO statement (population/patient/problem, intervention/exposure, comparison, outcome)
+# 
+# - The significance of your question. 
+# - So what? Why should people care?
+# - Potentially add your claim (that answers your Aim), if this suits the journal.
+```
+
+
+
+
+
+
+Subjects and methods
+====================
+
+```{r}
+# - Write Methods early on, while working through other parts of the project.
+# - Clearly describe experimental procedures. 
+# - Detailed description of scientific methods. 
+# - Can potentially include extended methods in supplementary material
+# - What are the outcome variables?
+# - What are the covariates or explanatory variables?
+# 
+# Some sections from STROBE:
+# 
+# Study design: Present key elements of study design early in the paper
+# Setting:	Describe the setting, locations, and relevant dates, including periods of recruitment, exposure, follow-up, and data collection
+# Participants: Give the eligibility criteria, and the sources and methods of selection of participants
+# Variables: Clearly define all outcomes, exposures, predictors, potential confounders, and effect modifiers. Give diagnostic criteria, if applicable
+# Data sources/measurement: For each variable of interest, give sources of data and details of methods of assessment (measurement). Describe comparability of assessment methods if there is more than one group
+# Bias:	Describe any efforts to address potential sources of bias
+# Study size: Explain how the study size was arrived at
+# Quantitative variables: Explain how quantitative variables were handled in the analyses. If applicable, describe which groupings were chosen and why
+# Statistical methods: 
+#   - Describe all statistical methods, including those used to control for confounding
+#   - Describe any methods used to examine subgroups and interactions
+#   - Explain how missing data were addressed
+#   - If applicable, describe analytical methods taking account of sampling strategy
+#   - Describe any sensitivity analyses
+```
+
+
+### Study design and participants
+
+```{r}
+# - Brief design, recruitment, inclusion/exclusion, enrollment, randomization, important timepoints/dates. 
+# - How many? Who were they? Are they representative for the general population?
+```
+
+
+
+
+
+
+### Statistical and bioinformatics analyses
+
+```{r}
+# - Type of data
+# - Power analyses
+# - Programs
+# - Significance level? 
+```
+
+
+
+
+
+Results
+=======
+
+```{r}
+# - Provide answers to your research questions/hypotheses/aims. 
+# - Continue the story you started in Introduction and Methods. 
+# 
+# - Should you include a flowchart?
+# - Structure Results according to your aims
+# - Most important findings in 2-3 tables and/or 2-3 figures
+# 
+# Some thoughts on table 1: 
+# 
+# - What is your study sample? 
+# - What are your "groups"?
+# - Which variables to include?
+# 
+# Some sections from STROBE: 
+# 
+# Participants: 
+#   - Report numbers of individuals at each stage of study—eg numbers potentially eligible, examined for eligibility, confirmed eligible, included in the study, completing follow-up, and analysed
+#   - Give reasons for non-participation at each stage
+# 	- Consider use of a flow diagram
+# Descriptive data: 
+#   - Give characteristics of study participants (eg demographic, clinical, social) and information on exposures and potential confounders
+# 	- Indicate number of participants with missing data for each variable of interest
+# Outcome data: Report numbers of outcome events or summary measures
+# Main results: 
+#   - Give unadjusted estimates and, if applicable, confounder-adjusted estimates and their precision (eg, 95% confidence interval). Make clear which confounders were adjusted for and why they were included
+# 	- Report category boundaries when continuous variables were categorized
+# 	- If relevant, consider translating estimates of relative risk into absolute risk for a meaningful time period
+# Other analyses: Report other analyses done—eg analyses of subgroups and interactions, and sensitivity analyses
+```
+
+
+
+
+### Finding 1
+
+```{r}
+# fig-1
+# include_graphics(file.path(path_figures, "fig-1.png"))
+```
+
+
+### Finding 2
+
+```{r}
+# fig-2
+# include_graphics(file.path(path_figures, "fig-2.png"))
+```
+
+
+### Finding 3
+
+```{r}
+# fig-3
+# include_graphics(file.path(path_figures, "fig-3.png"))
+```
+
+
+
+
+
+Discussion
+==========
+
+```{r}
+# - Summarize the main findings.
+# - Follow the Aims, Methods and Results sequence.
+# - Explain or defend the answer to the question(s) put forth in Aims.
+# - Explain contradictory or surprising findings, as well as results that don't correspond to previous findings.
+# - Explain the limitations of the methodology.
+# - Explain the novelty/important aspects of the present study.
+# 
+# - What are the general implications?
+# - What is the importance to the field?
+# 
+# Some sections from STROBE: 
+# 
+# Key results: Summarise key results with reference to study objectives
+# Limitations: Discuss limitations of the study, taking into account sources of potential bias or imprecision. Discuss both direction and magnitude of any potential bias
+# Interpretation: Give a cautious overall interpretation of results considering objectives, limitations, multiplicity of analyses, results from similar studies, and other relevant evidence
+# Generalisability: Discuss the generalisability (external validity) of the study results
+```
+
+
+
+
+### Finding 1
+
+### Finding 2
+
+### Finding 3
+
+
+### Strengths and limitations
+
+### Conclusions
+
+
+
+
+Acknowledgements
+================
+
+
+
+### Conflicts of interest
+
+
+### Authorship
+
+Conception and design
+
+Data analysis
+
+Data interpretation
+
+Wrote paper
+
+
+
+References
+==========
+
+<div id="refs"></div>
+
+
+
+
+Tables
+======
+
+```{r eval=TRUE}
+# readxl::read_xlsx(file.path(path_tables, "tab-1.xlsx")) %>%
+  # kable(caption = "Study sample: clinical characteristics.")
+```
+
+**`r cite_tab_main("tab-1")`**. *Description*.
+
+
+
+
+Figure legends
+==============
+
+### `r cite_fig_main("fig-1")`
+
+```{r}
+# fig-1
+# include_graphics(file.path(path_figures, "fig-1.png"))
+```
+
+**`r cite_fig_main("fig-1")`**. *Description*. Description. Abbreviations. 
+
+
+
+
+## `r cite_fig_main("fig-2")`
+
+```{r}
+# fig-2
+# include_graphics(file.path(path_figures, "fig-2.png"))
+```
+
+**`r cite_fig_main("fig-2")`**. *Description*. Description. Abbreviations. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---

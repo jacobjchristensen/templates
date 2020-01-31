@@ -1,0 +1,130 @@
+---
+title: "template"
+subtitle: "Project title"
+author: "Jacob J. Christensen"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '5'
+    toc_float: yes
+    code_folding: hide
+    theme: lumen
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	eval = TRUE, 
+  echo = TRUE, 
+  message = TRUE, 
+  warning = FALSE, 
+	root.dir = normalizePath(".."),
+	dev = c("png", "cairo_pdf"), 
+	dpi = 300, 
+  fig.align = "center", 
+	fig.keep = "all", 
+	fig.path = "../results/figures/...-"
+)
+```
+
+## Load libraries, data and project functions
+
+First, we load necessary *libraries*, *data* and general-use project *functions*. Also, we set the ggplot2 *theme* to a type that is a bit more publication-ready. 
+
+```{r}
+# Attach libraries and functions
+pkgs <- c("tidyverse", "tidylog")
+inst <- lapply(pkgs, library, character.only = TRUE)
+source("../scripts/functions.R")
+
+# Load data
+# ...
+
+# Set project theme
+theme_set(theme_minimal() + theme(axis.line = element_line()))
+```
+
+## Info
+
+> This is a template file. There are many like it, but this one is mine. 
+
+
+
+## Topic 1
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+
+## Topic 2
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+
+## Topic 3
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+
+## Conclusions
+
+This concludes the script. Some conclusions and take-homes: 
+
+- 
+- 
+- 
+
+
+
+## Save
+
+Here we save those files that we will use in downstream work. 
+
+```{r}
+# saveRDS(..., file = "../data/processed/INSERT-NAME.rds")
+# saveRDS(..., file = "../data/processed/INSERT-NAME.rds")
+# saveRDS(..., file = "../data/processed/INSERT-NAME.rds")
+# saveRDS(..., file = "../data/processed/INSERT-NAME.rds")
+# saveRDS(..., file = "../data/processed/INSERT-NAME.rds")
+```
+
+
+
+## Session info
+
+To improve reproducibility, print out the session info for this script. 
+
+```{r}
+devtools::session_info()
+```
+

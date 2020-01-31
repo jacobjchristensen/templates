@@ -1,0 +1,346 @@
+---
+title: "Multivariate analyses: PCA for XXX....."
+subtitle: "Project XXX....."
+author: "Jacob J. Christensen"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '5'
+    toc_float: yes
+    code_folding: show
+  pdf_document:
+    toc: yes
+    toc_depth: '5'
+    latex_engine: xelatex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	eval = TRUE, 
+  echo = TRUE, 
+  message = FALSE, 
+  warning = FALSE, 
+	root.dir = normalizePath(".."), 
+	dev = c("png", "pdf"),
+	fig.align = "center", 
+	fig.keep = "all", 
+	fig.path = "../figures/pca-XXX.....-"
+)
+```
+
+## Load libraries, data and project functions
+
+```{r}
+# Attach libraries
+pkgs <- c("tidyverse", "RColorBrewer", "broom", "factoextra", "dendextend")
+inst <- lapply(pkgs, library, character.only = TRUE)
+
+# Add functions
+source("../scripts/functions.R")
+
+# Load data
+# data_input <- load(file = "../data/processed/data-input.rds")
+# variables <- load(file = "../data/processed/data-input-vars.rds")
+
+# Set project theme
+theme_set(theme_minimal() + theme(axis.line = element_line()))
+```
+
+## Info
+
+Data are multivariate in nature and needs to be seen as such. Therefore, I here go through *PCA and correlation-based clustering* for all the different datasets. I will try to understand the underlying structure of the data. 
+
+In this file, I use the **XXX.....** dataset, and associated variables vector. 
+
+> This entire file should run fine (all the way *from loading to saving*) by changing these few lines only: the *modify* chunk, the title, and the figure path in the knitr chunk.
+
+```{r modify}
+dataset_name <- "XXX....."
+dataset <- data_XXX.....
+variables <- variables_XXX.....
+```
+
+
+## PCA
+
+### Run analysis
+
+First, run PCA and extract results for samples, variables and eigenvalues in a tidy format.
+
+```{r}
+# Run PCA
+dataset_pca <- dataset %>% 
+  select(IDcomb, one_of(variables)) %>% 
+  as.data.frame() %>% 
+  column_to_rownames(var = "IDcomb") %>% 
+  prcomp(~ ., data = ., scale = TRUE, center = TRUE)
+
+# Extract results in tidy format
+pca_samples <- tidy(dataset_pca, matrix = "samples")
+pca_variables <- tidy(dataset_pca, matrix = "variables")
+pca_eigenvalues <- tidy(dataset_pca, matrix = "pcs")
+```
+
+
+### Eigenvalues
+
+First examine the eigenvalues to figure out how many PCs we need to explain 50-99% of the variation in the data.
+
+```{r}
+value <- c(0.5, 0.75, 0.90, 0.95, 0.99)
+value_comp <- map_dbl(value, ~number_of_pcs(pca_eigenvalues, .x))
+```
+
+To explain 50, 75, 90, 95 and 99 % of the variation, you would need `r value_comp[1]`, `r value_comp[2]`, `r value_comp[3]`, `r value_comp[4]`, `r value_comp[5]` principal components, respectively. 
+
+Next, print the standard deviation, and percent and cumulative percent for each PC. Highlight the selected thresholds, as defined above.
+
+```{r scree, fig.width=8, fig.height=3}
+pca_eigenvalues_selected <- pca_eigenvalues %>% 
+  slice(value_comp) %>% 
+  gather(-PC, key = "key", value = "value")
+  
+pca_eigenvalues %>% 
+  gather(-PC, key = "key", value = "value") %>% 
+  ggplot(aes(PC, value)) + 
+  geom_line() + 
+  geom_label(data = pca_eigenvalues_selected, aes(label = PC), 
+             
+             # make the label small, remove border, and remove exessive padding
+             size = 2, label.size = 0, label.padding = unit(0.15, "lines")) + 
+  facet_wrap(~ fct_rev(key), scales = "free") + 
+  labs(x = "Number of principal components", y = NULL, 
+       title = paste0("Number of PC needed to explain ", 
+                      paste0(value*100, collapse = ", "), 
+                      " % \nof the cumulative percentage explained variance"))
+```
+
+
+
+### PC1 vs PC2
+
+Now, visualize PC1 versus PC2. 
+
+```{r}
+# Prep samples
+pca_samples_selected <- pca_samples %>% 
+  spread(PC, value) %>% 
+  gather(-row, -`1`, key = "key", value = "value") %>% 
+  filter(key %in% 2:5) %>% 
+  mutate(key = paste0("PC", key)) %>% 
+  rename(PC1 = `1`)
+
+# Prep vars
+pca_variables_selected <- pca_variables %>% 
+  spread(PC, value) %>% 
+  gather(-column, -`1`, key = "key", value = "value") %>% 
+  filter(key %in% 2:5) %>% 
+  mutate(key = paste0("PC", key)) %>% 
+  rename(PC1 = `1`)
+```
+
+
+#### Samples
+
+Make a simple sample PCA plot. You can color by a group or other feature and add ellipses using `stat_ellipse` and `directlabels::geom_dl` for example. 
+
+```{r pca-samples, fig.width=5, fig.height=4}
+plot_pca_samples <- pca_samples_selected %>% 
+  filter(key == "PC2") %>% 
+  spread(key = "key", value = "value") %>% 
+  mutate(id = as.character(row) %>% as.numeric()) %>% 
+  ggplot(aes(PC1, PC2)) + 
+  geom_point() + 
+  # stat_ellipse(type = "t", level = 0.8, linetype = 2) +
+  # directlabels::geom_dl(aes(label = group), method = "smart.grid") +
+  scale_color_brewer(palette = "Dark2") + 
+  theme(legend.position = "none") +
+  labs(x = paste0("PC1 (", round(pca_eigenvalues[1, 3]*100, 1), " %)"),
+       y = paste0("PC2 (", round(pca_eigenvalues[2, 3]*100, 1), " %)"))
+plot_pca_samples
+
+# To combine multiple PCA plots (for different data types) into a single figure, save it to a RDS file and retrieve it in a separate .Rmd script
+# saveRDS(plot_pca_samples, file = "../data/processed/pca-samples-XXX.rds")
+```
+
+
+#### Biplot
+
+Now make a biplot directly, with variables underneath, and the samples overlayed.
+
+```{r biplot, fig.width=12, fig.height=10}
+pca_samples_selected %>% 
+  ggplot(aes(scale(PC1), scale(value))) + 
+  geom_text(data = pca_variables_selected, 
+            aes(label = column, size = abs(PC1) + abs(value)), 
+            color = "blue", alpha = 0.3) + 
+  geom_point(shape = 21, color = "white", fill = "grey50", size = 3, alpha = 0.15) + 
+  facet_wrap(~ key, scales = "free") + 
+  theme(legend.position = "none") + 
+  labs(x = "PC1", y = NULL, 
+       title = "Biplot: PC1 versus PC2, PC3, PC4 and PC5")
+```
+
+There seems to be some clustering of variables across the different dimensions. Let's cluster the variables and color them.
+
+
+## Correlation heatmap
+
+Run correlation and visualize the correlation matrix: 
+
+```{r pheatmap, fig.width=9, fig.height=7}
+dataset %>% 
+  select(one_of(variables)) %>% 
+  cor(use = "pairwise.complete.obs", method = "spearman") %>% 
+  pheatmap::pheatmap()
+```
+
+We see some correlation between variables, suggesting redundant information in the dataset.
+
+
+## Correlation cluster analysis
+
+Run correlation and then cluster the distance object:
+
+```{r}
+dataset_hclust <- dataset %>% 
+  select(one_of(variables)) %>% 
+  cor(use = "pairwise.complete.obs", method = "spearman") %>% 
+  dist(method = "euclidean") %>% 
+  hclust(method = "complete")
+```
+
+Get some nice colors for the plot:
+
+```{r}
+# display.brewer.all(n = NULL,
+#                    type = "qual",
+#                    select = NULL,
+#                    exact.n = TRUE,
+#                    colorblindFriendly = FALSE)
+dark2 <- brewer.pal(n = 8, name = "Dark2")
+set1 <- brewer.pal(n = 9, name = "Set1")
+mycols <- c(dark2, set1)
+```
+
+
+### Standard viz
+
+Visualize the tree, and color by group:
+
+```{r dendro-initial, fig.width=15, fig.height=4}
+dend <-  as.dendrogram(dataset_hclust) %>%
+  # Branches line width
+  set("branches_lwd", 1) %>% 
+  # Color branches by groups
+  set("branches_k_color", mycols, k = 10) %>% 
+  # Color labels by groups
+  set("labels_colors", mycols, k = 10) %>%  
+  # Change label size
+  set("labels_cex", 0.6) %>% 
+  # Hang leaves
+  set("hang_leaves")
+fviz_dend(dend)
+```
+
+
+### Circular viz
+
+Visualize the circular plot instead:
+
+```{r dendro-circular, fig.width=10, fig.height=7}
+fviz_dend(dend, type = "circular")
+```
+
+
+### Cluster biplot
+
+Cut into 10 groups, to be able to visualize the variables in the PCA plot.
+
+```{r}
+hclust_clusters <- dataset_hclust %>% 
+  stats::cutree(k = 10) %>% 
+  tibble(variable = names(.), 
+         cluster = factor(.)) %>% 
+  select(-.)
+```
+
+Visualize the clusters again at the biplot.
+
+```{r biplot-clust, fig.width=12, fig.height=10}
+pca_variables_selected_clusters <- pca_variables_selected %>% 
+  left_join(hclust_clusters, by = c("column" = "variable"))
+
+pca_samples_selected %>% 
+  ggplot(aes(scale(PC1), scale(value))) + 
+  geom_point(shape = 21, color = "white", fill = "grey50", size = 3, alpha = 0.15) + 
+  geom_text(data = pca_variables_selected_clusters, 
+            aes(label = column, color = cluster, 
+                size = abs(PC1) + abs(value), 
+                alpha = abs(PC1) + abs(value))) + 
+  facet_wrap(~ key, scales = "free") + 
+  theme(legend.position = "none") + 
+  labs(x = "PC1", y = NULL, 
+       title = "Biplot: PC1 versus PC2, PC3, PC4 and PC5")
+```
+
+
+
+
+## Brief summary
+
+...
+
+
+## Save
+
+Since most of this document is generic, I need to rename my objects prior to saving. To this, use the `assign` function.
+
+Assign:
+
+```{r}
+# res <- list(
+#   assign(paste0("pca_samples", "_", dataset_name), pca_samples), 
+#   assign(paste0("pca_variables", "_", dataset_name), pca_variables), 
+#   assign(paste0("pca_eigenvalues", "_", dataset_name), pca_eigenvalues), 
+#   assign(paste0("hclust_clusters", "_", dataset_name), hclust_clusters)) %>% 
+#   set_names(c(
+#     paste0("pca_samples", "_", dataset_name), 
+#     paste0("pca_variables", "_", dataset_name), 
+#     paste0("pca_eigenvalues", "_", dataset_name), 
+#     paste0("hclust_clusters", "_", dataset_name)))
+```
+
+```{r}
+res <- list(pca_samples, pca_variables, pca_eigenvalues, hclust_clusters) %>% 
+  set_names(c(
+    paste0("pca_samples", "_", dataset_name),
+    paste0("pca_variables", "_", dataset_name),
+    paste0("pca_eigenvalues", "_", dataset_name),
+    paste0("hclust_clusters", "_", dataset_name)))
+```
+
+
+Save:
+
+```{r, include=FALSE}
+# Effectively save PCA/cluster results to .rds objects in the ../data/processed/ directory; for use in the "pca-..." reports
+save_with_name = function(name, object){
+  
+  # "name" is a string with the name of the variable you want to assign
+  # "object" is any kind of R object (data.frame, list, etc.) you want to rename and save
+  
+  assign(name, object)
+  save(list = name, file = sprintf("../data/processed/%s.rds", name))
+}
+
+save_with_name(name = sprintf("pca_%s", dataset_name), object = res)
+```
+
+## Session info
+
+```{r session info, echo=FALSE}
+devtools::session_info()
+```
