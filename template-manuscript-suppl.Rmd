@@ -1,6 +1,6 @@
 ---
-title: "title"
-subtitle: "Supplemental Material"
+title: "Online Supplementary Material"
+subtitle: "title"
 author:
   - Jacob J. Christensen, PhD:
       email: j.j.christensen@medisin.uio.no

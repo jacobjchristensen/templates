@@ -1,13 +1,14 @@
 
 # Ignore the following
 
+# Some R files
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+
 # Word/powerpoint documents
 *.docx
 *.pptx
 
-# Some R files
-.Rproj.user
-.Rhistory
-.RData
-.Ruserdata
 
